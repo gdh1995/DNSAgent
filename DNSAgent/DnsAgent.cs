@@ -238,8 +238,8 @@ namespace DnsAgent
                             if (!entry.IsExpired)
                             {
                                 var cachedMessage = entry.Message;
-                                Logger.Info("-> #{0} served from cache.", message.TransactionID,
-                                    cachedMessage.TransactionID);
+                                Logger.Info("-> #{0} {2} served from cache.", message.TransactionID,
+                                    cachedMessage.TransactionID, question.Name);
                                 cachedMessage.TransactionID = message.TransactionID; // Update transaction ID
                                 cachedMessage.TSigOptions = message.TSigOptions; // Update TSig options
                                 message = cachedMessage;
