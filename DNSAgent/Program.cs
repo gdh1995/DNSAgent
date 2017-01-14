@@ -146,6 +146,15 @@ namespace DnsAgent
                     if (eventArgs.Button == MouseButtons.Left)
                         hideMenuItem.PerformClick();
                 };
+                Application.ApplicationExit += new EventHandler((sender, eventArgs) => CleanIcon());
+                SetConsoleCtrlHandler(new ConsoleEventDelegate((eventType) =>
+                {
+                    if (eventType == CtrlTypes.CTRL_CLOSE_EVENT)
+                    {
+                        CleanIcon();
+                    }
+                    return false;
+                }), true);
                 Application.Run();
             }
             else
@@ -165,22 +174,32 @@ namespace DnsAgent
         {
             lock (DnsAgents)
             {
-                DnsAgents.ForEach(agent =>
+                foreach (var agent in DnsAgents)
                 {
                     agent.Stop();
-                });
+                }
             }
             Logger.Info("DNSAgent has been stopped.");
 
             if (Environment.UserInteractive)
             {
                 Logger.Title = "DNSAgent - Stopped";
-                _notifyIcon.Dispose();
-                _contextMenu.Dispose();
                 if (pressAnyKeyToContinue)
+                {
+                    CleanIcon();
                     PressAnyKeyToContinue();
+                }
                 Application.Exit();
             }
+        }
+
+        private static void CleanIcon()
+        {
+            if (_notifyIcon == null) { return; }
+            _notifyIcon.Dispose();
+            _notifyIcon = null;
+            _contextMenu?.Dispose();
+            _contextMenu = null;
         }
 
         private static void Reload()
@@ -236,6 +255,20 @@ namespace DnsAgent
 
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        public enum CtrlTypes
+        {
+            CTRL_C_EVENT = 0,
+            CTRL_BREAK_EVENT,
+            CTRL_CLOSE_EVENT,
+            CTRL_LOGOFF_EVENT = 5,
+            CTRL_SHUTDOWN_EVENT
+        }
+
+        private delegate bool ConsoleEventDelegate(CtrlTypes eventType);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
 
         private const int SwHide = 0;
         private const int SwShow = 5;
